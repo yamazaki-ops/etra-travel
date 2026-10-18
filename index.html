@@ -135,13 +135,21 @@ dl.facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .route{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:8px}
 .route .t{font-size:34px;font-weight:600;line-height:1.1}
 .route .p{font-size:14px;font-weight:700}
-.route .p span{display:inline-block}
+.route .p span,.card .title span,.panel .name span,.nw{display:inline-block}
 .route .end{text-align:right}
 .route .arrow{color:var(--muted);padding-bottom:6px}
 .panel .name{font-size:18px;font-weight:700}
 .panel dl.facts{font-size:15px;gap:6px 16px}
 .panel .btn{font-size:14px;padding:9px 12px}
 .toast{position:fixed;z-index:30;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;max-width:calc(100% - 32px)}
+.warn{font-size:12px;font-weight:700;color:var(--warn);border-left:3px solid var(--warn);padding:1px 0 1px 8px}
+.warnbox{background:var(--surface);border:1px solid var(--warn);border-radius:8px;padding:10px 14px;display:flex;flex-direction:column;gap:4px}
+.warnbox .label{color:var(--warn)}
+.warnbox ul{margin:0;padding-left:1.2em;font-size:13px;display:flex;flex-direction:column;gap:2px;text-wrap:pretty}
+.trip .meta .w{color:var(--warn);font-weight:700}
+.route .t.none{font-size:16px;color:var(--muted);padding-bottom:6px}
+.btn.ticket{background:var(--move);color:var(--surface);border-color:var(--move)}
+.card.past .warn{color:var(--past);border-color:var(--past)}
 footer{color:var(--muted);font-size:12px}
 </style>
 
@@ -171,6 +179,7 @@ footer{color:var(--muted);font-size:12px}
       <h1 id="trip-title"></h1>
       <div class="range num" id="trip-range"></div>
     </div>
+    <div class="warnbox" id="trip-warn" hidden></div>
     <div id="days" class="day"></div>
     <footer>時刻・座席は予約時点の情報です。遅延・番線変更は未反映</footer>
   </div>
@@ -202,7 +211,7 @@ TRIPS.forEach(t => {
   t.items = t.items.map((it,i) => {
     const hotel = it.type==="hotel";
     const start = hotel ? at(it.date, it.checkin) : at(it.date, it.dep.time);
-    const end = hotel ? at(it.checkout.date, it.checkout.time) : at(it.date, it.arr.time);
+    const end = hotel ? at(it.checkout.date, it.checkout.time || "10:00") : at(it.date, it.arr.time);
     // 点滅の開始：宿泊はチェックイン当日0:00、交通は出発1時間前
     const alert = hotel ? at(it.date, "00:00") : new Date(start - H);
     return { ...it, key:`${t.id}-${i}`, start, end, alert };
@@ -248,11 +257,11 @@ function renderDash(){
     const chip = { past:"終了", now:"出張中", future: countdown(t.start) }[s];
     const moves = t.items.filter(x=>x.type!=="hotel").length;
     const nights = t.items.filter(x=>x.type==="hotel").reduce((n,x)=> n + Math.round((at(x.checkout.date)-at(x.date))/DAY), 0);
-    const first = t.items.find(x=>x.type!=="hotel");
+    const first = t.items.find(x=>x.type!=="hotel") || null;
     return `<button class="trip ${s}" data-trip="${t.id}">
       <div class="row"><span class="t">${esc(t.title)}</span><span class="chip ${s}">${chip}</span></div>
       <div class="d num">${md(t.firstDate)} – ${md(t.lastDate)}</div>
-      <div class="meta"><span>移動 ${moves}件</span><span>宿泊 ${nights}泊</span>${first?`<span>${esc(first.dep.place)}発 ${esc(first.dep.time)}</span>`:""}</div>
+      <div class="meta"><span>移動 ${moves}件</span><span>宿泊 ${nights}泊</span>${(t.warnings||[]).length>0 && s!=="past"?`<span class="w">要確認 ${t.warnings.length}件</span>`:""}${first?`<span>${esc(first.dep.place)}発 ${esc(first.dep.time)}</span>`:""}</div>
       <span class="go">旅程を開く ›</span></button>`;
   }).join("") : `<div class="empty">この月の出張はありません</div>`;
 }
@@ -265,8 +274,10 @@ function countdown(t){
 
 /* ---------- 旅程画面 ---------- */
 let openTrip = null, focusKey = null;
+const coTime = it => `<span class="nw">${it.checkout.time ? esc(it.checkout.time) : "時刻記載なし"}</span>`;
+const warnHTML = it => it.warn ? `<div class="warn">${esc(it.warn)}</div>` : "";
 function factsHTML(f){ if(!f) return ""; return `<dl class="facts">${Object.entries(f).map(([k,v]) =>
-  `<dt>${esc(k)}</dt><dd class="${/番号|座席|部屋|乗り場/.test(k)?"num":""}">${esc(v)}</dd>`).join("")}</dl>`; }
+  `<dt>${esc(k)}</dt><dd class="${/番号|座席|ID|乗り場/.test(k)?"num":""}">${esc(v)}</dd>`).join("")}</dl>`; }
 function mapsHTML(it){
   if (it.type==="hotel") return `<a class="btn map" href="${mapURL(it.name+" "+it.address)}" target="_blank" rel="noopener">${PIN}地図で見る</a>`;
   return `<a class="btn map" href="${mapURL(it.dep.place)}" target="_blank" rel="noopener">${PIN}${esc(it.dep.place)}</a>`
@@ -274,8 +285,9 @@ function mapsHTML(it){
 }
 function extraHTML(it){
   const b = [];
-  const ref = it.facts && it.facts["予約番号"];
-  if (ref) b.push(`<button class="btn" data-copy="${esc(ref)}">予約番号をコピー</button>`);
+  if (it.ticketUrl) b.push(`<a class="btn ticket" href="${esc(it.ticketUrl)}" target="_blank" rel="noopener">QRチケットを表示</a>`);
+  const rk = it.facts && Object.keys(it.facts).find(k => /予約|お預かり/.test(k));
+  if (rk) b.push(`<button class="btn" data-copy="${esc(it.facts[rk])}">${esc(rk)}をコピー</button>`);
   if (it.address) b.push(`<button class="btn" data-copy="${esc(it.address)}">住所をコピー</button>`);
   if (it.tel) b.push(`<button class="btn" data-copy="${esc(it.tel)}">電話 <span class="num">${esc(it.tel)}</span></button>`);
   if (it.type!=="hotel") b.push(`<a class="btn" href="https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(it.dep.place)}&destination=${encodeURIComponent(it.arr.place)}&travelmode=transit" target="_blank" rel="noopener">乗換経路</a>`);
@@ -294,18 +306,20 @@ function cardHTML(it){
     ? `<div class="time">${esc(it.checkin)}<small>IN</small></div>`
     : `<div class="time">${esc(it.dep.time)}<small>→ ${esc(it.arr.time)}</small></div>`;
   const sub = it.type==="hotel"
-    ? `<div class="sub">${esc(it.address)}</div><div class="sub">チェックアウト <span class="num">${md(it.checkout.date)} ${esc(it.checkout.time)}</span></div>`
-    : `<div class="sub">${esc(it.dep.place)} → ${esc(it.arr.place)}</div>`;
+    ? `<div class="sub">${esc(it.address)}</div><div class="sub">チェックアウト <span class="num nw">${md(it.checkout.date)}</span> ${coTime(it)}</div>${warnHTML(it)}`
+    : `<div class="sub">${esc(it.dep.place)} → ${esc(it.arr.place)}</div>${warnHTML(it)}`;
   return `<article class="card ${cls} ${s}${pulsing(it)?" pulse":""}" data-key="${it.key}" tabindex="0" aria-label="${esc(it.name)}を拡大表示">
     ${time}<div class="main">
       <div class="tags"><span class="kind">${KIND[it.type]||"移動"}</span>${soon?`<span class="soon">${soon}</span>`:""}</div>
-      <div class="title">${esc(it.name)}</div>${sub}
+      <div class="title">${seg(it.name)}</div>${sub}
       <div class="actions">${mapsHTML(it)}</div></div></article>`;
 }
 function renderTrip(){
   const t = TRIPS.find(x => x.id===openTrip); if (!t) return;
   $("#trip-title").textContent = t.title;
   $("#trip-range").textContent = `${md(t.firstDate)} – ${md(t.lastDate)}`;
+  const w = t.warnings || []; $("#trip-warn").hidden = !w.length;
+  $("#trip-warn").innerHTML = w.length ? `<div class="label">要確認 ${w.length}件</div><ul>${w.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>` : "";
   const byDay = {}; t.items.forEach(x => (byDay[x.date] ||= []).push(x));
   const d0 = at(t.firstDate);
   $("#days").innerHTML = Object.keys(byDay).sort().map(d =>
@@ -317,14 +331,14 @@ function renderSheet(){
   const it = byKey[focusKey], cls = it.type==="hotel" ? "stay" : "move", soon = soonText(it);
   const route = it.type==="hotel"
     ? `<div class="route"><div><div class="label">チェックイン ${md(it.date)}</div><div class="t num">${esc(it.checkin)}</div></div><div class="arrow">→</div>
-       <div class="end"><div class="label">アウト ${md(it.checkout.date)}</div><div class="t num">${esc(it.checkout.time)}</div></div></div>
+       <div class="end"><div class="label">アウト ${md(it.checkout.date)}</div><div class="t num${it.checkout.time?"":" none"}">${it.checkout.time?esc(it.checkout.time):"記載なし"}</div></div></div>
        <div class="sub">${esc(it.address)}</div>`
     : `<div class="label">${md(it.date)}</div>
        <div class="route"><div><div class="t num">${esc(it.dep.time)}</div><div class="p">${seg(it.dep.place)}</div></div><div class="arrow">→</div>
        <div class="end"><div class="t num">${esc(it.arr.time)}</div><div class="p">${seg(it.arr.place)}</div></div></div>`;
   sh.innerHTML = `<div class="panel ${cls}" role="dialog" aria-modal="true" aria-label="${esc(it.name)}">
     <div class="bar"><span>${KIND[it.type]||"移動"}${soon?` ・ ${soon}`:""}</span><button class="close" data-close>閉じる</button></div>
-    <div class="body"><div class="name">${esc(it.name)}</div>${route}${factsHTML(it.facts)}
+    <div class="body"><div class="name">${seg(it.name)}</div>${route}${warnHTML(it)}${factsHTML(it.facts)}
       ${it.note?`<div class="sub">${esc(it.note)}</div>`:""}
       <div class="actions">${mapsHTML(it)}${extraHTML(it)}</div></div></div>`;
   sh.hidden = false;

@@ -1,36 +1,67 @@
-/* Etraトラベル 旅程データ。ここだけ差し替えれば更新できます */
-window.SAMPLE = true;
+/* Etraトラベル 旅程データ。ここだけ差し替えれば更新できます
+   出典：2026-10-17〜18 受信の予約メール14件＋JR九州 予約完了画面
+   checkout.time が null のものは、予約メールに時刻の記載がないもの */
+window.SAMPLE = false;
 window.TRIPS = [
-  { id:"fukuoka2609", title:"福岡出張（サンプル）", items:[
-    { type:"train", date:"2026-09-16", dep:{time:"07:58", place:"大分駅"}, arr:{time:"10:13", place:"博多駅"},
-      name:"ソニック 12号", facts:{ "号車・座席":"4号車 8C" } },
-    { type:"train", date:"2026-09-16", dep:{time:"18:12", place:"博多駅"}, arr:{time:"20:24", place:"大分駅"},
-      name:"ソニック 51号", facts:{ "号車・座席":"6号車 2A" } }
+  { id:"tokyo-niigata-nagoya2610", title:"東京・新潟・名古屋出張",
+    warnings:[
+      "10/21 東京 → 新潟の移動は予約がありません",
+      "とき310号（10/22）は乗車用ICカードが未登録です。えきねっとで登録してください"
+    ],
+    items:[
+    { type:"flight", date:"2026-10-20", dep:{time:"10:40", place:"大分空港"}, arr:{time:"12:20", place:"成田空港 第3ターミナル"},
+      name:"ジェットスター GK602便", facts:{ "座席":"4D", "予約番号":"DWDU2G", "手荷物":"機内7kg・預け15kg" },
+      note:"搭乗手続きは出発35分前まで。自動チェックイン機に予約番号を入力" },
+    { type:"hotel", date:"2026-10-20", checkin:"16:00", checkout:{date:"2026-10-21", time:null},
+      name:"西新宿グリーンホテル", address:"東京都渋谷区幡ヶ谷2-18-1", tel:"03-3378-2468",
+      facts:{ "予約受付番号":"RYa0njfe6x", "部屋":"シングル（セミダブル）・喫煙", "支払い":"一括精算（現地払いなし）" },
+      note:"受付は16:00〜翌2:00。2:00〜6:00は玄関施錠" },
+    { type:"hotel", date:"2026-10-21", checkin:"21:30", checkout:{date:"2026-10-22", time:null},
+      name:"アートホテル新潟駅前", address:"新潟県新潟市中央区笹口1-1", tel:"025-240-2111",
+      facts:{ "予約受付番号":"RYa0njfgr1", "部屋":"スーペリアシングル・禁煙", "食事":"10/22 朝食", "支払い":"一括精算（現地払いなし）" } },
+    { type:"train", date:"2026-10-22", dep:{time:"08:33", place:"新潟駅"}, arr:{time:"10:29", place:"東京駅"},
+      name:"とき310号（上越新幹線）", facts:{ "号車・座席":"9号車 2番E", "予約番号":"E69722", "きっぷ":"新幹線eチケット（えきねっと）" },
+      warn:"乗車用ICカードが未登録" },
+    { type:"train", date:"2026-10-22", dep:{time:"11:00", place:"東京駅"}, arr:{time:"12:39", place:"名古屋駅"},
+      name:"のぞみ255号", facts:{ "号車・座席":"5号車 7番A", "お預かり番号":"2001", "きっぷ":"スマートEX（ICカードで乗車）" } },
+    { type:"hotel", date:"2026-10-22", checkin:"15:00", checkout:{date:"2026-10-24", time:null},
+      name:"ジャストインプレミアム名古屋駅", address:"愛知県名古屋市中区丸の内1-13-9", tel:"052-232-0003",
+      facts:{ "予約受付番号":"RYa0njfp12", "部屋":"プレミアムシングル・禁煙", "食事":"10/23 朝夕・10/24 朝", "支払い":"一括精算（現地払いなし）" } },
+    { type:"train", date:"2026-10-24", dep:{time:"10:24", place:"名古屋駅"}, arr:{time:"13:28", place:"小倉駅"},
+      name:"のぞみ131号", facts:{ "号車・座席":"15号車 1番A", "お預かり番号":"2003", "きっぷ":"スマートEX（ICカード指定済み）" } },
+    { type:"train", date:"2026-10-24", dep:{time:"13:42", place:"小倉駅"}, arr:{time:"15:02", place:"大分駅"},
+      name:"特急ソニック25号", facts:{ "号車・座席":"4号車 2番D", "予約番号":"65251", "きっぷ":"QRチケット" },
+      ticketUrl:"https://train-ticket.jrkyushu.co.jp/tkl/ui/ticket?key=d8d85ed7-c304-42f8-87a0-2ea2ff43f6b3",
+      note:"小倉での乗換は14分。QRチケットは通信できる状態で表示（スクショ不可）" }
   ]},
-  { id:"tokyo2610", title:"東京出張（サンプル）", items:[
-    { type:"flight", date:"2026-10-27", dep:{time:"08:10", place:"大分空港"}, arr:{time:"09:40", place:"羽田空港 第1ターミナル"},
-      name:"JAL 662便", facts:{ "座席":"23A", "予約番号":"ABC123", "搭乗口":"当日確認" }, note:"保安検査は出発20分前まで" },
-    { type:"train", date:"2026-10-27", dep:{time:"10:05", place:"羽田空港第1ターミナル駅"}, arr:{time:"10:25", place:"浜松町駅"},
-      name:"東京モノレール", facts:{ "運賃":"IC利用" } },
-    { type:"hotel", date:"2026-10-27", checkin:"15:00", checkout:{date:"2026-10-29", time:"11:00"},
-      name:"サンプルホテル浜松町", address:"東京都港区海岸1-1-1", tel:"03-0000-0000",
-      facts:{ "予約番号":"HTL-98765", "部屋":"シングル・禁煙", "支払い":"現地払い" } },
-    { type:"train", date:"2026-10-29", dep:{time:"12:30", place:"東京駅"}, arr:{time:"17:24", place:"小倉駅"},
-      name:"のぞみ 41号", facts:{ "号車・座席":"7号車 12E", "予約番号":"EX-4567" } },
-    { type:"train", date:"2026-10-29", dep:{time:"17:41", place:"小倉駅"}, arr:{time:"18:59", place:"大分駅"},
-      name:"ソニック 55号", facts:{ "号車・座席":"5号車 3A" } }
+  { id:"tokyo2610b", title:"東京出張",
+    warnings:[
+      "JAL航空券は10/21 2:37までに購入しないと予約が自動で取り消されます",
+      "10/29の宿泊は予約がありません（10/30 朝の便で帰着）"
+    ],
+    items:[
+    { type:"flight", date:"2026-10-28", dep:{time:"07:50", place:"大分空港"}, arr:{time:"09:20", place:"羽田空港"},
+      name:"JAL 662便", facts:{ "座席":"普通席（未指定）", "予約番号":"DS3VXD" },
+      warn:"10/21 2:37までに購入が必要" },
+    { type:"hotel", date:"2026-10-28", checkin:"15:00", checkout:{date:"2026-10-29", time:"10:00"},
+      name:"ホテルリブマックス 新宿歌舞伎町明治通", address:"東京都新宿区歌舞伎町2-23", tel:"03-3209-7800",
+      facts:{ "予約ID":"1787106689", "部屋":"シングル（トイレ付）・禁煙", "支払い":"支払い済み（返金不可）" },
+      note:"宿泊税は別途、チェックイン時に支払い" },
+    { type:"flight", date:"2026-10-30", dep:{time:"09:45", place:"羽田空港"}, arr:{time:"11:30", place:"大分空港"},
+      name:"JAL 663便", facts:{ "座席":"普通席（未指定）", "予約番号":"DS3VXD" } }
   ]},
-  { id:"osaka2611", title:"大阪出張（サンプル）", items:[
-    { type:"flight", date:"2026-11-12", dep:{time:"09:15", place:"大分空港"}, arr:{time:"10:20", place:"伊丹空港"},
-      name:"ANA 1692便", facts:{ "座席":"14C", "予約番号":"XYZ789" } },
-    { type:"bus", date:"2026-11-12", dep:{time:"10:40", place:"大阪空港バス停"}, arr:{time:"11:05", place:"梅田"},
-      name:"空港リムジンバス", facts:{ "乗り場":"南ターミナル 5番" } },
-    { type:"hotel", date:"2026-11-12", checkin:"15:00", checkout:{date:"2026-11-13", time:"10:00"},
-      name:"サンプルイン梅田", address:"大阪府大阪市北区梅田1-1-1", tel:"06-0000-0000",
-      facts:{ "予約番号":"OSK-2468", "部屋":"シングル・禁煙" } },
-    { type:"train", date:"2026-11-13", dep:{time:"15:20", place:"新大阪駅"}, arr:{time:"17:35", place:"小倉駅"},
-      name:"のぞみ 27号", facts:{ "号車・座席":"9号車 4A", "予約番号":"EX-1357" } },
-    { type:"train", date:"2026-11-13", dep:{time:"17:52", place:"小倉駅"}, arr:{time:"19:12", place:"大分駅"},
-      name:"ソニック 57号", facts:{ "号車・座席":"3号車 6D" } }
+  { id:"yaizu2611", title:"焼津出張",
+    warnings:[ "往復の交通は予約がありません" ],
+    items:[
+    { type:"hotel", date:"2026-11-04", checkin:"15:00", checkout:{date:"2026-11-06", time:null},
+      name:"ホテル シーラックパル焼津", address:"静岡県焼津市栄町2-6-17", tel:"054-620-5586",
+      facts:{ "予約受付番号":"RYa0njg4d3", "部屋":"シングル・喫煙", "食事":"11/5 朝夕・11/6 朝", "支払い":"一括精算（現地払いなし）" } }
+  ]},
+  { id:"kawasaki2611", title:"川崎出張",
+    warnings:[ "往復の交通は予約がありません" ],
+    items:[
+    { type:"hotel", date:"2026-11-09", checkin:"15:00", checkout:{date:"2026-11-10", time:null},
+      name:"川崎第一ホテル溝ノ口", address:"神奈川県川崎市高津区溝口2-3-12", tel:"044-877-3333",
+      facts:{ "予約受付番号":"RYa0njg5f4", "部屋":"シングル・喫煙", "食事":"11/10 朝食", "支払い":"一括精算（現地払いなし）" } }
   ]}
 ];
