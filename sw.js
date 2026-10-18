@@ -1,5 +1,5 @@
 // Etraトラベル：オフライン対応。アプリ本体は先にキャッシュ、旅程データは通信できるときに最新を取得
-const VERSION = "v5";
+const VERSION = "v6";
 const SHELL = ["./", "index.html", "data.js", "manifest.webmanifest", "icons/icon-192.png", "icons/apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
