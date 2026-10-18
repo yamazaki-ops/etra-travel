@@ -51,33 +51,39 @@ window.TRIPS = [
       name:"JAL 663便", facts:{ "座席":"32H（普通席）", "予約番号":"DS3VXD", "支払い":"購入済み" } }
   ]},
   { id:"yaizu2611", title:"東京・焼津出張",
-    warnings:[
-      "新宿 → 焼津（11/4）の移動は予約がありません",
-      "11/6の焼津 → 羽田は予約なしの予定ルートです。ひかり500号のきっぷは静岡駅で購入"
-    ],
+    warnings:[],
     items:[
     { type:"flight", date:"2026-11-03", dep:{time:"10:35", place:"大分空港"}, arr:{time:"12:00", place:"羽田空港"},
       name:"JAL 664便", facts:{ "座席":"45K（普通席）", "予約番号":"58P7T4", "支払い":"購入済み" } },
     { type:"hotel", date:"2026-11-03", checkin:"15:00", checkout:{date:"2026-11-04", time:"10:00"},
       name:"東横INN 新宿御苑前駅3番出口", address:"東京都新宿区新宿1-17-8", tel:"03-6843-1045",
       note:"予約画面の表示：キャンセル料金なし（10/19 3:26以降）" },
+    { type:"gap", date:"2026-11-04", window:["10:00","15:00"],
+      dep:{time:null, place:"東横INN 新宿御苑前駅3番出口"}, arr:{time:null, place:"ホテル シーラックパル焼津"},
+      name:"新宿 → 焼津の移動", note:"東横INNのチェックアウト（10:00）から焼津のチェックイン（15:00）までの間" },
     { type:"hotel", date:"2026-11-04", checkin:"15:00", checkout:{date:"2026-11-06", time:null},
       name:"ホテル シーラックパル焼津", address:"静岡県焼津市栄町2-6-17", tel:"054-620-5586",
       facts:{ "予約受付番号":"RYa0njg4d3", "部屋":"シングル・喫煙", "食事":"11/5 朝夕・11/6 朝", "支払い":"一括精算（現地払いなし）" } },
     { type:"train", date:"2026-11-06", planned:true, dep:{time:"06:19", place:"焼津駅"}, arr:{time:"06:31", place:"静岡駅"},
       name:"JR東海道本線（普通）", note:"6:10にホテルを出発、焼津駅まで徒歩3分" },
     { type:"train", date:"2026-11-06", planned:true, dep:{time:"06:47", place:"静岡駅"}, arr:{time:"07:41", place:"品川駅"},
-      name:"ひかり500号（東京行）", note:"静岡駅での乗換は約15分。新幹線のきっぷ購入・朝食の調達" },
+      name:"ひかり500号（東京行）", note:"静岡駅での乗換は約15分。新幹線のきっぷは静岡駅で購入・朝食の調達" },
     { type:"train", date:"2026-11-06", planned:true, dep:{time:"07:57", place:"品川駅"}, arr:{time:"08:24", place:"羽田空港"},
       name:"京急本線（エアポート急行）", note:"品川駅での乗換は約15分。羽田空港は第1または第2ターミナル" },
     { type:"flight", date:"2026-11-06", dep:{time:"09:45", place:"羽田空港"}, arr:{time:"11:30", place:"大分空港"},
       name:"JAL 663便", facts:{ "座席":"35C（普通席）", "予約番号":"58P7T4", "支払い":"購入済み" } }
   ]},
   { id:"kawasaki2611", title:"川崎出張",
-    warnings:[ "往復の交通は予約がありません" ],
+    warnings:[],
     items:[
+    { type:"gap", date:"2026-11-09", window:["00:00","15:00"],
+      dep:{time:null, place:"大分"}, arr:{time:null, place:"川崎第一ホテル溝ノ口"},
+      name:"大分 → 溝ノ口の移動", note:"ホテルのチェックイン（15:00）までに到着" },
     { type:"hotel", date:"2026-11-09", checkin:"15:00", checkout:{date:"2026-11-10", time:null},
       name:"川崎第一ホテル溝ノ口", address:"神奈川県川崎市高津区溝口2-3-12", tel:"044-877-3333",
-      facts:{ "予約受付番号":"RYa0njg5f4", "部屋":"シングル・喫煙", "食事":"11/10 朝食", "支払い":"一括精算（現地払いなし）" } }
+      facts:{ "予約受付番号":"RYa0njg5f4", "部屋":"シングル・喫煙", "食事":"11/10 朝食", "支払い":"一括精算（現地払いなし）" } },
+    { type:"gap", date:"2026-11-10", window:["10:00","23:59"],
+      dep:{time:null, place:"川崎第一ホテル溝ノ口"}, arr:{time:null, place:"大分"},
+      name:"溝ノ口 → 大分の移動", note:"ホテルのチェックアウト後（時刻はメールに記載なし）" }
   ]}
 ];

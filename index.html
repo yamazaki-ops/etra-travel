@@ -20,18 +20,18 @@
 /* Layout: 1カラム。ダッシュボード（年・月 → 出張一覧）と旅程画面の2画面。移動=青、宿泊=緑、時刻は等幅 */
 :root{
   --bg:#eef1f4; --surface:#ffffff; --ink:#18222e; --muted:#5c6b7a; --line:#d5dce4;
-  --move:#1f5fa8; --move-soft:#e3edf8; --stay:#2f7a55; --stay-soft:#e2f1e8; --warn:#a8561f; --past:#9aa5b1;
+  --move:#1f5fa8; --move-soft:#e3edf8; --stay:#2f7a55; --stay-soft:#e2f1e8; --warn:#a8561f; --past:#9aa5b1; --alert:#c0392b; --alert-soft:#fbe4e1;
   --scrim:rgba(17,24,32,.55);
   --f-body:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
   --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#11161c; --surface:#1a2129; --ink:#e6ebf0; --muted:#93a1b0; --line:#2c3642;
-  --move:#7fb0e8; --move-soft:#1c2c3f; --stay:#7cc79f; --stay-soft:#1b3127; --warn:#e3a06e; --past:#5d6874;
+  --move:#7fb0e8; --move-soft:#1c2c3f; --stay:#7cc79f; --stay-soft:#1b3127; --warn:#e3a06e; --past:#5d6874; --alert:#f0877c; --alert-soft:#3b2022;
   --scrim:rgba(0,0,0,.65); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#11161c; --surface:#1a2129; --ink:#e6ebf0; --muted:#93a1b0; --line:#2c3642;
-  --move:#7fb0e8; --move-soft:#1c2c3f; --stay:#7cc79f; --stay-soft:#1b3127; --warn:#e3a06e; --past:#5d6874;
+  --move:#7fb0e8; --move-soft:#1c2c3f; --stay:#7cc79f; --stay-soft:#1b3127; --warn:#e3a06e; --past:#5d6874; --alert:#f0877c; --alert-soft:#3b2022;
   --scrim:rgba(0,0,0,.65); color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -101,6 +101,11 @@ select{font:inherit;font-family:var(--f-num);font-size:15px;padding:6px 10px;bor
 .soon{font-size:11px;font-weight:700;color:var(--move)}
 .plan{font-size:11px;font-weight:700;color:var(--muted);border:1px dashed var(--muted);border-radius:3px;padding:0 5px}
 .card.planned{border-style:dashed}
+.card.card.card.unres{border-color:var(--alert);box-shadow:none;--glow:var(--alert-soft)}
+.card.card.card.unres.now{box-shadow:0 0 0 1px var(--alert)}
+.card.unres .plan{color:var(--alert);border-color:var(--alert)}
+.trip .meta .u{color:var(--alert);font-weight:700}
+.sheet .panel.unb .bar{background:var(--alert)}
 .stay .soon{color:var(--stay)}
 .card .title{font-weight:700;font-size:15px}
 .sub{font-size:13px;color:var(--muted);text-wrap:pretty}
@@ -121,10 +126,10 @@ dl.facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .card.pulse.move{--glow:var(--move-soft)}
 .card.pulse.stay{--glow:var(--stay-soft)}
 @media (prefers-reduced-motion:no-preference){
-  .card.pulse{animation:pulse 2.4s ease-in-out infinite}
+  .card.pulse,.card.unres{animation:pulse 2.4s ease-in-out infinite}
   @keyframes pulse{0%,100%{background:var(--surface)}50%{background:var(--glow)}}
 }
-@media (prefers-reduced-motion:reduce){.card.pulse{background:var(--glow)}}
+@media (prefers-reduced-motion:reduce){.card.pulse,.card.unres{background:var(--glow)}}
 
 /* 拡大表示 */
 .sheet{position:fixed;inset:0;z-index:20;background:var(--scrim);display:flex;align-items:center;justify-content:center;
@@ -194,7 +199,7 @@ footer{color:var(--muted);font-size:12px}
 <script>
 const SAMPLE = window.SAMPLE, TRIPS = window.TRIPS;
 
-const KIND = { flight:"飛行機", train:"鉄道", bus:"バス", hotel:"宿泊" };
+const KIND = { flight:"飛行機", train:"鉄道", bus:"バス", hotel:"宿泊", gap:"移動" };
 const WD = ["日","月","火","水","木","金","土"];
 const H = 3600e3, DAY = 864e5;
 const $ = s => document.querySelector(s);
@@ -211,12 +216,13 @@ const PIN = `<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColo
 // 予定ごとの時刻を計算
 TRIPS.forEach(t => {
   t.items = t.items.map((it,i) => {
-    const hotel = it.type==="hotel";
-    const start = hotel ? at(it.date, it.checkin) : at(it.date, it.dep.time);
-    const end = hotel ? at(it.checkout.date, it.checkout.time || "10:00") : at(it.date, it.arr.time);
+    const hotel = it.type==="hotel", gap = it.type==="gap";
+    // 予約なしの移動（gap）は、前後の予定から決めた時間帯 window で並べる
+    const start = hotel ? at(it.date, it.checkin) : gap ? at(it.date, it.window[0]) : at(it.date, it.dep.time);
+    const end = hotel ? at(it.checkout.date, it.checkout.time || "10:00") : gap ? at(it.window[2] || it.date, it.window[1]) : at(it.date, it.arr.time);
     // 点滅の開始：宿泊はチェックイン当日0:00、交通は出発1時間前
     const alert = hotel ? at(it.date, "00:00") : new Date(start - H);
-    return { ...it, key:`${t.id}-${i}`, start, end, alert };
+    return { ...it, key:`${t.id}-${i}`, start, end, alert, unbooked: gap || !!it.planned };
   }).sort((a,b) => a.start - b.start);
   t.start = t.items[0].start;
   t.end = t.items.reduce((m,x) => x.end > m ? x.end : m, t.items[0].end);
@@ -257,13 +263,14 @@ function renderDash(){
   $("#trips").innerHTML = list.length ? list.map(t => {
     const s = now >= t.end ? "past" : now >= t.start ? "now" : "future";
     const chip = { past:"終了", now:"出張中", future: countdown(t.start) }[s];
-    const moves = t.items.filter(x=>x.type!=="hotel").length;
+    const moves = t.items.filter(x=>x.type!=="hotel" && x.type!=="gap").length;
+    const unb = t.items.filter(x=>x.unbooked && now < x.end).length;
     const nights = t.items.filter(x=>x.type==="hotel").reduce((n,x)=> n + Math.round((at(x.checkout.date)-at(x.date))/DAY), 0);
-    const first = t.items.find(x=>x.type!=="hotel") || null;
+    const first = t.items.find(x=>x.type!=="hotel" && x.type!=="gap") || null;
     return `<button class="trip ${s}" data-trip="${t.id}">
       <div class="row"><span class="t">${esc(t.title)}</span><span class="chip ${s}">${chip}</span></div>
       <div class="d num">${md(t.firstDate)} – ${md(t.lastDate)}</div>
-      <div class="meta"><span>移動 ${moves}件</span><span>宿泊 ${nights}泊</span>${(t.warnings||[]).length>0 && s!=="past"?`<span class="w">要確認 ${t.warnings.length}件</span>`:""}${first?`<span>${esc(first.dep.place)}発 ${esc(first.dep.time)}</span>`:""}</div>
+      <div class="meta"><span>移動 ${moves}件</span><span>宿泊 ${nights}泊</span>${unb>0?`<span class="u">予約なし ${unb}件</span>`:""}${(t.warnings||[]).length>0 && s!=="past"?`<span class="w">要確認 ${t.warnings.length}件</span>`:""}${first?`<span>${esc(first.dep.place)}発 ${esc(first.dep.time)}</span>`:""}</div>
       <span class="go">旅程を開く ›</span></button>`;
   }).join("") : `<div class="empty">この月の出張はありません</div>`;
 }
@@ -299,20 +306,24 @@ function soonText(it){
   const s = st(it);
   if (s==="past") return "終了";
   if (it.type==="hotel") return s==="now" ? "滞在中" : (pulsing(it) ? "本日チェックイン" : "");
+  if (it.type==="gap") return "";
   if (s==="now") return "移動中";
   return pulsing(it) ? `出発まで${Math.ceil((it.start-now)/60000)}分` : "";
 }
 function cardHTML(it){
   const cls = it.type==="hotel" ? "stay" : "move", s = st(it), soon = soonText(it);
-  const time = it.type==="hotel"
+  const unres = it.unbooked && s!=="past";
+  const time = it.type==="gap" ? `<div class="time">未定<small>時刻</small></div>`
+    : it.type==="hotel"
     ? `<div class="time">${esc(it.checkin)}<small>IN</small></div>`
     : `<div class="time">${esc(it.dep.time)}<small>→ ${esc(it.arr.time)}</small></div>`;
   const sub = it.type==="hotel"
     ? `${it.address?`<div class="sub">${esc(it.address)}</div>`:""}<div class="sub">チェックアウト <span class="num nw">${md(it.checkout.date)}</span> ${coTime(it)}</div>${warnHTML(it)}`
+    : it.type==="gap" ? warnHTML(it)
     : `<div class="sub">${esc(it.dep.place)} → ${esc(it.arr.place)}</div>${warnHTML(it)}`;
-  return `<article class="card ${cls} ${s}${pulsing(it)?" pulse":""}${it.planned?" planned":""}" data-key="${it.key}" tabindex="0" aria-label="${esc(it.name)}を拡大表示">
+  return `<article class="card ${cls} ${s}${unres?" unres":pulsing(it)?" pulse":""}${it.unbooked?" planned":""}" data-key="${it.key}" tabindex="0" aria-label="${esc(it.name)}を拡大表示">
     ${time}<div class="main">
-      <div class="tags"><span class="kind">${KIND[it.type]||"移動"}</span>${it.planned?`<span class="plan">予約なし・予定</span>`:""}${soon?`<span class="soon">${soon}</span>`:""}</div>
+      <div class="tags"><span class="kind">${KIND[it.type]||"移動"}</span>${it.type==="gap"?`<span class="plan">予約なし</span>`:it.planned?`<span class="plan">予約なし・予定</span>`:""}${soon?`<span class="soon">${soon}</span>`:""}</div>
       <div class="title">${seg(it.name)}</div>${sub}
       <div class="actions">${mapsHTML(it)}</div></div></article>`;
 }
@@ -336,10 +347,10 @@ function renderSheet(){
        <div class="end"><div class="label">アウト ${md(it.checkout.date)}</div><div class="t num${it.checkout.time?"":" none"}">${it.checkout.time?esc(it.checkout.time):"記載なし"}</div></div></div>
        ${it.address?`<div class="sub">${esc(it.address)}</div>`:""}`
     : `<div class="label">${md(it.date)}</div>
-       <div class="route"><div><div class="t num">${esc(it.dep.time)}</div><div class="p">${seg(it.dep.place)}</div></div><div class="arrow">→</div>
-       <div class="end"><div class="t num">${esc(it.arr.time)}</div><div class="p">${seg(it.arr.place)}</div></div></div>`;
-  sh.innerHTML = `<div class="panel ${cls}" role="dialog" aria-modal="true" aria-label="${esc(it.name)}">
-    <div class="bar"><span>${KIND[it.type]||"移動"}${it.planned?" ・ 予約なし（予定）":""}${soon?` ・ ${soon}`:""}</span><button class="close" data-close>閉じる</button></div>
+       <div class="route"><div><div class="t num${it.dep.time?"":" none"}">${it.dep.time?esc(it.dep.time):"未定"}</div><div class="p">${seg(it.dep.place)}</div></div><div class="arrow">→</div>
+       <div class="end"><div class="t num${it.arr.time?"":" none"}">${it.arr.time?esc(it.arr.time):"未定"}</div><div class="p">${seg(it.arr.place)}</div></div></div>`;
+  sh.innerHTML = `<div class="panel ${cls}${it.unbooked?" unb":""}" role="dialog" aria-modal="true" aria-label="${esc(it.name)}">
+    <div class="bar"><span>${KIND[it.type]||"移動"}${it.type==="gap"?" ・ 予約なし":it.planned?" ・ 予約なし（予定）":""}${soon?` ・ ${soon}`:""}</span><button class="close" data-close>閉じる</button></div>
     <div class="body"><div class="name">${seg(it.name)}</div>${route}${warnHTML(it)}${factsHTML(it.facts)}
       ${it.note?`<div class="sub">${esc(it.note)}</div>`:""}
       <div class="actions">${mapsHTML(it)}${extraHTML(it)}</div></div></div>`;
