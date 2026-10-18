@@ -99,6 +99,8 @@ select{font:inherit;font-family:var(--f-num);font-size:15px;padding:6px 10px;bor
 .stay .kind{background:var(--stay-soft);color:var(--stay)}
 .tags{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .soon{font-size:11px;font-weight:700;color:var(--move)}
+.plan{font-size:11px;font-weight:700;color:var(--muted);border:1px dashed var(--muted);border-radius:3px;padding:0 5px}
+.card.planned{border-style:dashed}
 .stay .soon{color:var(--stay)}
 .card .title{font-weight:700;font-size:15px}
 .sub{font-size:13px;color:var(--muted);text-wrap:pretty}
@@ -308,9 +310,9 @@ function cardHTML(it){
   const sub = it.type==="hotel"
     ? `${it.address?`<div class="sub">${esc(it.address)}</div>`:""}<div class="sub">チェックアウト <span class="num nw">${md(it.checkout.date)}</span> ${coTime(it)}</div>${warnHTML(it)}`
     : `<div class="sub">${esc(it.dep.place)} → ${esc(it.arr.place)}</div>${warnHTML(it)}`;
-  return `<article class="card ${cls} ${s}${pulsing(it)?" pulse":""}" data-key="${it.key}" tabindex="0" aria-label="${esc(it.name)}を拡大表示">
+  return `<article class="card ${cls} ${s}${pulsing(it)?" pulse":""}${it.planned?" planned":""}" data-key="${it.key}" tabindex="0" aria-label="${esc(it.name)}を拡大表示">
     ${time}<div class="main">
-      <div class="tags"><span class="kind">${KIND[it.type]||"移動"}</span>${soon?`<span class="soon">${soon}</span>`:""}</div>
+      <div class="tags"><span class="kind">${KIND[it.type]||"移動"}</span>${it.planned?`<span class="plan">予約なし・予定</span>`:""}${soon?`<span class="soon">${soon}</span>`:""}</div>
       <div class="title">${seg(it.name)}</div>${sub}
       <div class="actions">${mapsHTML(it)}</div></div></article>`;
 }
@@ -337,7 +339,7 @@ function renderSheet(){
        <div class="route"><div><div class="t num">${esc(it.dep.time)}</div><div class="p">${seg(it.dep.place)}</div></div><div class="arrow">→</div>
        <div class="end"><div class="t num">${esc(it.arr.time)}</div><div class="p">${seg(it.arr.place)}</div></div></div>`;
   sh.innerHTML = `<div class="panel ${cls}" role="dialog" aria-modal="true" aria-label="${esc(it.name)}">
-    <div class="bar"><span>${KIND[it.type]||"移動"}${soon?` ・ ${soon}`:""}</span><button class="close" data-close>閉じる</button></div>
+    <div class="bar"><span>${KIND[it.type]||"移動"}${it.planned?" ・ 予約なし（予定）":""}${soon?` ・ ${soon}`:""}</span><button class="close" data-close>閉じる</button></div>
     <div class="body"><div class="name">${seg(it.name)}</div>${route}${warnHTML(it)}${factsHTML(it.facts)}
       ${it.note?`<div class="sub">${esc(it.note)}</div>`:""}
       <div class="actions">${mapsHTML(it)}${extraHTML(it)}</div></div></div>`;
