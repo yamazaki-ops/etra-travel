@@ -279,7 +279,7 @@ const warnHTML = it => it.warn ? `<div class="warn">${esc(it.warn)}</div>` : "";
 function factsHTML(f){ if(!f) return ""; return `<dl class="facts">${Object.entries(f).map(([k,v]) =>
   `<dt>${esc(k)}</dt><dd class="${/番号|座席|ID|乗り場/.test(k)?"num":""}">${esc(v)}</dd>`).join("")}</dl>`; }
 function mapsHTML(it){
-  if (it.type==="hotel") return `<a class="btn map" href="${mapURL(it.name+" "+it.address)}" target="_blank" rel="noopener">${PIN}地図で見る</a>`;
+  if (it.type==="hotel") return `<a class="btn map" href="${mapURL([it.name, it.address].filter(Boolean).join(" "))}" target="_blank" rel="noopener">${PIN}地図で見る</a>`;
   return `<a class="btn map" href="${mapURL(it.dep.place)}" target="_blank" rel="noopener">${PIN}${esc(it.dep.place)}</a>`
        + `<a class="btn map" href="${mapURL(it.arr.place)}" target="_blank" rel="noopener">${PIN}${esc(it.arr.place)}</a>`;
 }
@@ -306,7 +306,7 @@ function cardHTML(it){
     ? `<div class="time">${esc(it.checkin)}<small>IN</small></div>`
     : `<div class="time">${esc(it.dep.time)}<small>→ ${esc(it.arr.time)}</small></div>`;
   const sub = it.type==="hotel"
-    ? `<div class="sub">${esc(it.address)}</div><div class="sub">チェックアウト <span class="num nw">${md(it.checkout.date)}</span> ${coTime(it)}</div>${warnHTML(it)}`
+    ? `${it.address?`<div class="sub">${esc(it.address)}</div>`:""}<div class="sub">チェックアウト <span class="num nw">${md(it.checkout.date)}</span> ${coTime(it)}</div>${warnHTML(it)}`
     : `<div class="sub">${esc(it.dep.place)} → ${esc(it.arr.place)}</div>${warnHTML(it)}`;
   return `<article class="card ${cls} ${s}${pulsing(it)?" pulse":""}" data-key="${it.key}" tabindex="0" aria-label="${esc(it.name)}を拡大表示">
     ${time}<div class="main">
@@ -332,7 +332,7 @@ function renderSheet(){
   const route = it.type==="hotel"
     ? `<div class="route"><div><div class="label">チェックイン ${md(it.date)}</div><div class="t num">${esc(it.checkin)}</div></div><div class="arrow">→</div>
        <div class="end"><div class="label">アウト ${md(it.checkout.date)}</div><div class="t num${it.checkout.time?"":" none"}">${it.checkout.time?esc(it.checkout.time):"記載なし"}</div></div></div>
-       <div class="sub">${esc(it.address)}</div>`
+       ${it.address?`<div class="sub">${esc(it.address)}</div>`:""}`
     : `<div class="label">${md(it.date)}</div>
        <div class="route"><div><div class="t num">${esc(it.dep.time)}</div><div class="p">${seg(it.dep.place)}</div></div><div class="arrow">→</div>
        <div class="end"><div class="t num">${esc(it.arr.time)}</div><div class="p">${seg(it.arr.place)}</div></div></div>`;
