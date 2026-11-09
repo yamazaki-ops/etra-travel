@@ -398,7 +398,16 @@ document.addEventListener("keydown", e => {
 $("#year").addEventListener("change", e => { view.y = +e.target.value; renderDash(); });
 $("#back").addEventListener("click", () => { location.hash = ""; });
 addEventListener("hashchange", route);
-document.addEventListener("visibilitychange", () => { if (!document.hidden){ lastMinute = -1; tick(); } });
+// アプリに戻ったとき、旅程データが更新されていれば読み込み直す
+let dataStamp = null;
+async function checkData(){
+  try {
+    const r = await fetch("data.js", { cache: "no-cache" }); const t = await r.text();
+    if (dataStamp === null) dataStamp = t; else if (t !== dataStamp) location.reload();
+  } catch(_) {}
+}
+checkData();
+document.addEventListener("visibilitychange", () => { if (!document.hidden){ lastMinute = -1; tick(); checkData(); } });
 
 route(); tick(); setInterval(tick, 1000);
 </script>
